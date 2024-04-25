@@ -31,6 +31,7 @@ public:
 		}
 
 		ImGui::End();
+		//ImGui::ShowDemoWindow();
 	}
 
 private:

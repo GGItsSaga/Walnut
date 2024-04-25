@@ -55,10 +55,10 @@ private:
                 throw std::runtime_error("Error decrypting file");
             }
 
-            
+
             std::string result(reinterpret_cast<const char*>(decryptedText.data()), decryptedText.size());
             writeFile("decrypted_" + filename, result);
-       
+
         }
         catch (const std::exception& e) {
             std::cerr << "Exception during decryption: " << e.what() << std::endl;

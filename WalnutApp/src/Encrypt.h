@@ -1,6 +1,6 @@
 #pragma once
 #ifndef ENCRYPT_H
-#define ECNRYPT_H
+#define ERYPT_H
 #include <sodium.h>
 #include <fstream>
 #include <iostream>
