@@ -3,12 +3,21 @@
 
 #include "Walnut/Image.h"
 #include <iostream>
+#include <string>
 #include "Encrypt.h"
 #include "Decrypt.h"
+#include "Account.h"
 
 
 class ExampleLayer : public Walnut::Layer
 {
+private:
+	Account account;
+	bool isLoggedIn = false;
+	bool showCreateAccountPopup = false;
+	char usernameInput[128] = "";
+	char passwordInput[128] = "";
+
 public:
 	ExampleLayer()
 	{
@@ -20,24 +29,77 @@ public:
 	{
 		ImGui::Begin("Menu");
 
-		if (ImGui::Button("Encrypt"))
+		if (!isLoggedIn)
 		{
-			encryptCallback();
+			ImGui::Text("Login");
+			ImGui::InputText("Username", usernameInput, sizeof(usernameInput));
+			ImGui::InputText("Password", passwordInput, sizeof(passwordInput), ImGuiInputTextFlags_Password);
+
+			if (ImGui::Button("Log In"))
+			{
+				isLoggedIn = account.login(usernameInput, passwordInput);
+				if (!isLoggedIn)
+				{
+					ImGui::OpenPopup("Login Failed");
+				}
+			}
+
+			// Login failed popup:
+			if (ImGui::BeginPopupModal("Login Failed", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::Text("Login failed. Please try again.");
+				if (ImGui::Button("OK"))
+				{
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
 		}
 
-		if (ImGui::Button("Decrypt"))
+		else // User has successfully logged in. Since thats the case, they are now able to encrypt and decrypt files.
 		{
-			decryptCallback();
+			// Calculate the horizontal position for center alignment:
+			float windowWidth = ImGui::GetWindowWidth();
+			float buttonWidth = 300.0f; // Width of the buttons
+			float buttonHeight = 100.0f; // Height of the buttons
+			float verticalPadding = (ImGui::GetWindowSize().y - buttonHeight * 2) / 3.0f; // Vertical padding
+
+			// Add vertical space above the buttons
+			ImGui::Spacing();
+			ImGui::Dummy(ImVec2(0.0f, verticalPadding));
+
+			// Calculate the horizontal position for center alignment
+			float horizontalPadding = (windowWidth - buttonWidth * 2) / 2.0f;
+			ImGui::SetCursorPosX(horizontalPadding);
+
+			// Increase button text size
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(20, 20));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(20, 20));
+
+			if (ImGui::Button("Encrypt", ImVec2(buttonWidth, buttonHeight)))
+			{
+				encryptCallback();
+			}
+
+			ImGui::SameLine(); // Move to the same line for the next button
+
+			if (ImGui::Button("Decrypt", ImVec2(buttonWidth, buttonHeight)))
+			{
+				decryptCallback();
+
+			}
+
+			ImGui::PopStyleVar(2);
 		}
 
 		ImGui::End();
-		//ImGui::ShowDemoWindow();
 	}
 
 private:
 	std::unique_ptr<Encrypt> e;
 	std::unique_ptr<Decrypt> d;
 
+	// Encryption call, will edit to where the user can enter what the file is named instead of hardcoding it.
 	void encryptCallback()
 	{
 		try
@@ -57,6 +119,7 @@ private:
 		}
 	}
 
+	// Decryption call, will do the same to decryption call later.
 	void decryptCallback()
 	{
 		d->setKey(e->getKey());
@@ -69,7 +132,6 @@ private:
 			d->appendFile("Encrypted_" + name);
 		}
 		d->decryptAndSaveAll();
-
 	}
 };
 
