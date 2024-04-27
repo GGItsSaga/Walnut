@@ -11,6 +11,7 @@ class Account
 private:
     std::string username;
     std::string password;
+    std::string errorMessage;
 
     bool isValidPassword(const std::string& pwd) const 
     {
@@ -22,8 +23,9 @@ private:
         std::ofstream outFile("accounts.txt", std::ios::app); // Append mode
         if (!outFile.is_open()) 
         {
-            std::cerr << "Error: Failed to open file for writing." << std::endl;
-            throw std::runtime_error("Failed to open file for writing.");
+            ImGui::OpenPopup("Error Opening File");
+            //errorMessage = "Error: Failed to open file for writing.";
+            return;
         }
 
         try 
@@ -33,27 +35,47 @@ private:
         }
         catch (const std::exception& e) 
         {
-            std::cerr << "Error while writing to file: " << e.what() << std::endl;
+            ImGui::OpenPopup("Error Writing File");
+            //errorMessage = "Error while writing to file: " + std::string(e.what());
             outFile.close(); // Make sure to close the file in case of an exception
-            throw; // Re-throw the exception for the caller to handle
         }
     }
 
 public:
     Account() : username(""), password("") {}
 
-    bool createAccount(const std::string& usr, const std::string& pwd) 
+    std::string createAccount(const std::string& usr, const std::string& pwd)
     {
+        // Check if the username already exists. If it's taken, return an error message.
+        if (isUsernameTaken(usr))
+        {
+            return "Username taken";
+        }
+
         username = usr;
         password = pwd;
 
-        if (!isValidPassword(password)) 
+        saveToFile(); // Save the account data to file
+        return "Account created successfully";
+    }
+    
+    // Checks if the username is taken or not. If it is, output an error and ask them to re-enter.
+    bool isUsernameTaken(const std::string& usr) const
+    {
+        std::ifstream inFile("accounts.txt");
+        std::string storedUser, storedPass;
+
+        while (inFile >> storedUser >> storedPass)
         {
-            throw std::invalid_argument("Password does not meet the requirements.");
+            if (storedUser == usr)
+            {
+                inFile.close();
+                return true; // Username is already taken
+            }
         }
 
-        saveToFile(); // Save the account data to file
-        return true;
+        inFile.close();
+        return false; // Username is not taken
     }
 
     bool login(const std::string& usr, const std::string& pwd) 

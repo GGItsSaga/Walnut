@@ -17,6 +17,10 @@ private:
 	bool showCreateAccountPopup = false;
 	char usernameInput[128] = "";
 	char passwordInput[128] = "";
+	char newUsername[128] = "";
+	char newPassword[128] = "";
+	std::string errorMessage;
+	std::string accountCreationResult;
 
 public:
 	ExampleLayer()
@@ -25,10 +29,16 @@ public:
 		d = std::make_unique<Decrypt>();
 	}
 
+	// Render method for GUI
 	virtual void OnUIRender() override
 	{
 		ImGui::Begin("Menu");
 
+		// If user is not logged in, prompt them towards the login screen. 
+		// This will ask the user to input their username and password from the accounts.txt file. If it's correct, login. If not, prompt them an error.
+		// If a user is accessing this for the first time, they can create an account. If the username is already registered then it will output an error that
+		// tells the user that it's already taken, and then re-prompt them to enter their information. If successful, writes that information to accounts.txt and exits.
+		// After exiting account creation, users will use that login and password that they just made in order to access the system. If user login is successful...
 		if (!isLoggedIn)
 		{
 			ImGui::Text("Login");
@@ -54,11 +64,69 @@ public:
 				}
 				ImGui::EndPopup();
 			}
+
+			// Create Account popup:
+			if (ImGui::Button("Create Account"))
+			{
+				showCreateAccountPopup = true;
+			}
+
+			if (showCreateAccountPopup)
+			{
+				ImGui::OpenPopup("Create New Account");
+				if (ImGui::BeginPopupModal("Create New Account", &showCreateAccountPopup, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					ImGui::InputText("New Username", newUsername, sizeof(newUsername)); // User enters new username
+					ImGui::InputText("New Password", newPassword, sizeof(newPassword), ImGuiInputTextFlags_Password); // User enters new password
+					if (ImGui::Button("Register"))
+					{
+						accountCreationResult = account.createAccount(newUsername, newPassword);
+						if (accountCreationResult == "Account created successfully")
+						{
+							showCreateAccountPopup = false;
+							ImGui::CloseCurrentPopup();
+						}
+						else if (accountCreationResult == "Username taken")
+						{
+							ImGui::OpenPopup("Username Taken");
+						}
+					}
+
+					// Error popup for username taken
+					if (ImGui::BeginPopupModal("Username Taken", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+					{
+						ImGui::Text("Error: Username is already taken.");
+						if (ImGui::Button("OK"))
+						{
+							ImGui::CloseCurrentPopup();
+						}
+						ImGui::EndPopup();
+					}
+
+					if (ImGui::BeginPopupModal("Create Account Error", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+					{
+						ImGui::Text("Error creating account:");
+						ImGui::TextWrapped(errorMessage.c_str());
+						if (ImGui::Button("OK"))
+						{
+							ImGui::CloseCurrentPopup();
+						}
+						ImGui::EndPopup();
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Cancel"))
+					{
+						showCreateAccountPopup = false;
+						ImGui::CloseCurrentPopup();
+					}
+					ImGui::EndPopup();
+				}
+			}
 		}
 
 		else // User has successfully logged in. Since thats the case, they are now able to encrypt and decrypt files.
 		{
-			// Calculate the horizontal position for center alignment:
+			// Center allignment calculations for Encrypt and Decrypt buttons. The next three sectons up until the Encrypt and Decrypt button call is general UI formatting.
 			float windowWidth = ImGui::GetWindowWidth();
 			float buttonWidth = 300.0f; // Width of the buttons
 			float buttonHeight = 100.0f; // Height of the buttons
@@ -68,21 +136,23 @@ public:
 			ImGui::Spacing();
 			ImGui::Dummy(ImVec2(0.0f, verticalPadding));
 
-			// Calculate the horizontal position for center alignment
+			// Calculate the horizontal position for center alignment:
 			float horizontalPadding = (windowWidth - buttonWidth * 2) / 2.0f;
 			ImGui::SetCursorPosX(horizontalPadding);
 
-			// Increase button text size
+			// Increase button text size:
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(20, 20));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(20, 20));
 
+			// If user clicks the Encrypt button, calls the encryptCallBack method that encrypts the selected file.
 			if (ImGui::Button("Encrypt", ImVec2(buttonWidth, buttonHeight)))
 			{
 				encryptCallback();
 			}
 
-			ImGui::SameLine(); // Move to the same line for the next button
+			ImGui::SameLine(); // Move to the same line for the next button.
 
+			// If user clicks the Decrypt button, calls the decryptCallBack method that decrypts the selected file.
 			if (ImGui::Button("Decrypt", ImVec2(buttonWidth, buttonHeight)))
 			{
 				decryptCallback();
@@ -135,6 +205,7 @@ private:
 	}
 };
 
+// Main method for application call:
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
 	Walnut::ApplicationSpecification spec;
