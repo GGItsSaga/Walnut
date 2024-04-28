@@ -15,12 +15,12 @@ private:
 	Account account;
 	bool isLoggedIn = false;
 	bool showCreateAccountPopup = false;
-	char usernameInput[128] = "";
-	char passwordInput[128] = "";
-	char newUsername[128] = "";
-	char newPassword[128] = "";
-	std::string errorMessage;
-	std::string accountCreationResult;
+	char usernameInput[128] = "", passwordInput[128] = ""; // Username and password entry
+	char newUsername[128] = "", newPassword[128] = ""; // New username and password entry
+	std::string errorMessage, accountCreationResult; // Error message output for logins and account creation check
+	char inputFileEncrypt[128] = ""; // Encrypt file input
+	char inputFileDecrypt[128] = ""; // Decrypt file input
+	std::string encryptError, decryptError; // Encrypt and decrypt errors
 
 public:
 	ExampleLayer()
@@ -41,16 +41,17 @@ public:
 		// After exiting account creation, users will use that login and password that they just made in order to access the system. If user login is successful...
 		if (!isLoggedIn)
 		{
-			ImGui::Text("Login");
+			ImGui::Text("Login"); 
 			ImGui::InputText("Username", usernameInput, sizeof(usernameInput));
 			ImGui::InputText("Password", passwordInput, sizeof(passwordInput), ImGuiInputTextFlags_Password);
 
 			if (ImGui::Button("Log In"))
 			{
+				// Checks to see if the user input is a valid input. If it is, skip. If not, print popup.
 				isLoggedIn = account.login(usernameInput, passwordInput);
 				if (!isLoggedIn)
 				{
-					ImGui::OpenPopup("Login Failed");
+					ImGui::OpenPopup("Login Failed"); // Popup call
 				}
 			}
 
@@ -103,6 +104,7 @@ public:
 						ImGui::EndPopup();
 					}
 
+					// General error if there is any for creating an account: 
 					if (ImGui::BeginPopupModal("Create Account Error", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 					{
 						ImGui::Text("Error creating account:");
@@ -144,24 +146,87 @@ public:
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(20, 20));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(20, 20));
 
-			// If user clicks the Encrypt button, calls the encryptCallBack method that encrypts the selected file.
+			// Encryption and Decryption buttons: 
 			if (ImGui::Button("Encrypt", ImVec2(buttonWidth, buttonHeight)))
 			{
-				encryptCallback();
+				ImGui::OpenPopup("Encrypt Files");
 			}
 
-			ImGui::SameLine(); // Move to the same line for the next button.
+			ImGui::SameLine(); // Move to the same line for the next button
 
-			// If user clicks the Decrypt button, calls the decryptCallBack method that decrypts the selected file.
 			if (ImGui::Button("Decrypt", ImVec2(buttonWidth, buttonHeight)))
 			{
-				decryptCallback();
-
+				ImGui::OpenPopup("Decrypt Files");
 			}
 
 			ImGui::PopStyleVar(2);
-		}
 
+			// Encrypt popup
+			if (ImGui::BeginPopupModal("Encrypt Files", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::InputText("File to Encrypt", inputFileEncrypt, sizeof(inputFileEncrypt));
+
+				if (ImGui::Button("Encrypt"))
+				{
+					if (fileExists(inputFileEncrypt))
+					{
+						encryptCallback(inputFileEncrypt);
+						ImGui::CloseCurrentPopup();
+					}
+					else
+					{
+						encryptError = "Error: File not found.";
+					}
+				}
+
+				ImGui::SameLine();
+
+				if (ImGui::Button("Cancel"))
+				{
+					ImGui::CloseCurrentPopup();
+				}
+
+				if (!encryptError.empty())
+				{
+					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), encryptError.c_str());
+				}
+
+				ImGui::EndPopup();
+			}
+
+			// Decrypt popup (similar structure as Encrypt popup)
+			if (ImGui::BeginPopupModal("Decrypt Files", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::InputText("File to Decrypt", inputFileDecrypt, sizeof(inputFileDecrypt));
+
+				if (ImGui::Button("Decrypt"))
+				{
+					if (fileExists(inputFileDecrypt))
+					{
+						decryptCallback(inputFileDecrypt);
+						ImGui::CloseCurrentPopup();
+					}
+					else
+					{
+						decryptError = "Error: File not found.";
+					}
+				}
+
+				ImGui::SameLine();
+
+				if (ImGui::Button("Cancel"))
+				{
+					ImGui::CloseCurrentPopup();
+				}
+
+				if (!decryptError.empty())
+				{
+					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), decryptError.c_str());
+				}
+
+				ImGui::EndPopup();
+			}
+		}
 		ImGui::End();
 	}
 
@@ -169,18 +234,12 @@ private:
 	std::unique_ptr<Encrypt> e;
 	std::unique_ptr<Decrypt> d;
 
-	// Encryption call, will edit to where the user can enter what the file is named instead of hardcoding it.
-	void encryptCallback()
+	// Encryption call:
+	void encryptCallback(const char* inputFile)
 	{
 		try
 		{
-			// Input files:
-			std::string inputFile1 = "Testing1.txt";
-			std::string inputFile2 = "Testing2.txt";
-
-			// Encrypt input files and save encrypted versions
-			e->appendFile(inputFile1);
-			e->appendFile(inputFile2);
+			e->appendFile(inputFile);
 			e->encryptAndSave();
 		}
 		catch (const std::exception& e)
@@ -189,19 +248,30 @@ private:
 		}
 	}
 
-	// Decryption call, will do the same to decryption call later.
-	void decryptCallback()
+	// Decryption call: 
+	void decryptCallback(const char* inputFile)
 	{
-		d->setKey(e->getKey());
-
-		std::vector<std::string> encryptedNames = e->getEncryptedFileNames();
-		// try to display these in the GUI
-		for (const auto& name : encryptedNames)
+		try
 		{
-			d->appendFile("Encrypted_" + name);
-			d->appendFile("Encrypted_" + name);
+			// Perform decryption logic here
+			d->setKey(e->getKey());
+
+			// AppendFile and decrypt the encrypted file
+			d->appendFile(inputFile);
+			d->decryptAndSaveAll(); // Assuming this method decrypts and saves the decrypted content
 		}
-		d->decryptAndSaveAll();
+		catch (const std::exception& e)
+		{
+			std::cerr << "Error during decryption: " << e.what() << std::endl;
+			// Handle decryption error if needed
+		}
+	}
+
+	// Checks if a file exits or not for encryption or decryption.
+	bool fileExists(const char* fileName)
+	{
+		std::ifstream file(fileName);
+		return file.good();
 	}
 };
 
