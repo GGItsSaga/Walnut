@@ -103,8 +103,6 @@ public:
     {
         return username;
     }
-
-
 };
 
 #endif // ACCOUNT_H

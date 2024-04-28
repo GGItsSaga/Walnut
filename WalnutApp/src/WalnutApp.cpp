@@ -13,8 +13,8 @@ class ExampleLayer : public Walnut::Layer
 {
 private:
 	Account account;
-	bool isLoggedIn = false;
-	bool showCreateAccountPopup = false;
+	bool isLoggedIn = false; // Universal check for login
+	bool showCreateAccountPopup = false; // Universal check for Create account popup
 	char usernameInput[128] = "", passwordInput[128] = ""; // Username and password entry
 	char newUsername[128] = "", newPassword[128] = ""; // New username and password entry
 	std::string errorMessage, accountCreationResult; // Error message output for logins and account creation check
@@ -184,12 +184,23 @@ public:
 				ImGui::OpenPopup("Encrypt Files");
 			}
 
+			ImGui::SameLine(); // Move to the same line for the next button
+
+			// Decrypt button
+			if (ImGui::Button("Decrypt", ImVec2(buttonWidth, buttonHeight)))
+			{
+				ImGui::OpenPopup("Decrypt Files");
+			}
+
+			ImGui::PopStyleVar(2);
+
 			// Encrypt popup. When "Encrypt" is pressed, a pop-up will come up, and will prompt user to enter the file they wish to encrypt.
 			// When they put in the file name, it calls the encryptCallBack method.
 			// If the file doesn't exist, outputs an error saying that the file does not exist.
 			if (ImGui::BeginPopupModal("Encrypt Files", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 			{
-				ImGui::InputText("File to Encrypt", inputFileEncrypt, sizeof(inputFileEncrypt));
+				ImGui::Text("Enter file name for Encryption:");
+				ImGui::InputText("##File to Encrypt", inputFileEncrypt, sizeof(inputFileEncrypt));
 
 				if (ImGui::Button("Encrypt"))
 				{
@@ -219,22 +230,13 @@ public:
 				ImGui::EndPopup();
 			}
 
-			ImGui::SameLine(); // Move to the same line for the next button
-
-			// Decrypt button
-			if (ImGui::Button("Decrypt", ImVec2(buttonWidth, buttonHeight)))
-			{
-				ImGui::OpenPopup("Decrypt Files");
-			}
-
-			ImGui::PopStyleVar(2);
-
 			// Decrypt popup. When "Decrypt" is pressed, a pop-up will come up, and will prompt user to enter the file they wish to decrypt.
 			// When they put in the file name, it calls the decryptCallBack method.
 			// If the file doesn't exist, outputs an error saying that the file does not exist.
 			if (ImGui::BeginPopupModal("Decrypt Files", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 			{
-				ImGui::InputText("File to Decrypt", inputFileDecrypt, sizeof(inputFileDecrypt));
+				ImGui::Text("Enter file name for Decryption:");
+				ImGui::InputText("##File to Decrypt", inputFileDecrypt, sizeof(inputFileDecrypt));
 
 				if (ImGui::Button("Decrypt"))
 				{
