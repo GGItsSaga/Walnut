@@ -55,10 +55,40 @@ public:
 				}
 			}
 
+			// Button to open log file on login screen
+			if (ImGui::Button("Access Public Log"))
+			{
+				std::string logFileName = "public log.txt";
+
+				// Checks to see if log exists.
+				std::ifstream logFile(logFileName);
+				if (logFile.good())
+				{
+					logFile.close();
+					std::string command = "start notepad " + logFileName;
+					std::system(command.c_str());
+				}
+				else
+				{
+					ImGui::OpenPopup("Log Not Found");
+				}
+			}
+
+			// If log isn't found, run this popup window. 
+			if (ImGui::BeginPopupModal("Log Not Found", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::Text("No public log file found.");
+				if (ImGui::Button("OK"))
+				{
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
+
 			// Login failed popup:
 			if (ImGui::BeginPopupModal("Login Failed", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 			{
-				ImGui::Text("Login failed. Please try again.");
+				ImGui::Text("Username or Password incorrect. Please re-enter.");
 				if (ImGui::Button("OK"))
 				{
 					ImGui::CloseCurrentPopup();
@@ -146,7 +176,7 @@ public:
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(20, 20));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(20, 20));
 
-			// Encryption and Decryption buttons: 
+			// Encrypt button 
 			if (ImGui::Button("Encrypt", ImVec2(buttonWidth, buttonHeight)))
 			{
 				ImGui::OpenPopup("Encrypt Files");
@@ -154,6 +184,7 @@ public:
 
 			ImGui::SameLine(); // Move to the same line for the next button
 
+			// Decrypt button
 			if (ImGui::Button("Decrypt", ImVec2(buttonWidth, buttonHeight)))
 			{
 				ImGui::OpenPopup("Decrypt Files");
@@ -161,7 +192,9 @@ public:
 
 			ImGui::PopStyleVar(2);
 
-			// Encrypt popup
+			// Encrypt popup. When "Encrypt" is pressed, a pop-up will come up, and will prompt user to enter the file they wish to encrypt.
+			// When they put in the file name, it calls the encryptCallBack method.
+			// If the file doesn't exist, outputs an error saying that the file does not exist.
 			if (ImGui::BeginPopupModal("Encrypt Files", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 			{
 				ImGui::InputText("File to Encrypt", inputFileEncrypt, sizeof(inputFileEncrypt));
@@ -194,7 +227,9 @@ public:
 				ImGui::EndPopup();
 			}
 
-			// Decrypt popup (similar structure as Encrypt popup)
+			// Encrypt popup. When "Decrypt" is pressed, a pop-up will come up, and will prompt user to enter the file they wish to decrypt.
+			// When they put in the file name, it calls the decryptCallBack method.
+			// If the file doesn't exist, outputs an error saying that the file does not exist.
 			if (ImGui::BeginPopupModal("Decrypt Files", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 			{
 				ImGui::InputText("File to Decrypt", inputFileDecrypt, sizeof(inputFileDecrypt));
@@ -226,6 +261,43 @@ public:
 
 				ImGui::EndPopup();
 			}
+
+			// Encryption log: 
+			// Center align the "Open Log File" button. Why do this? 
+			// Makes GUI match what we had originally while making the program look cleaner as a result.
+			float logButtonPosX = (windowWidth - buttonWidth) / 2.0f;
+			ImGui::SetCursorPosX(logButtonPosX);
+			
+			// Encryption/Decryption log opener:
+			if (ImGui::Button("Open Log File", ImVec2(buttonWidth, buttonHeight)))
+			{
+				std::string logFileName = "public log.txt";
+
+				// Checks to see if log exists. If it exists, pushes a command that opens notepad in windows. 
+				// Can be implemented into Mac/Linux but for this particular case, we use windows commands.
+				std::ifstream logFile(logFileName);
+				if (logFile.good())
+				{
+					logFile.close();
+					std::string command = "start notepad " + logFileName;
+					std::system(command.c_str());
+				}
+				else
+				{
+					ImGui::OpenPopup("Log File Not Found");
+				}
+			}
+
+			// If log isn't found, run this popup window. 
+			if (ImGui::BeginPopupModal("Log File Not Found", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::Text("Error: No public log file found.");
+				if (ImGui::Button("OK"))
+				{
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
 		}
 		ImGui::End();
 	}
@@ -254,7 +326,7 @@ private:
 				std::cerr << "Error opening log file for writing." << std::endl;
 			}
 
-			// Appends and encrypts file typed in
+			// Appends and encrypts file typed in by the user.
 			e->appendFile(inputFile);
 			e->encryptAndSave();
 		}
@@ -284,7 +356,7 @@ private:
 				std::cerr << "Error opening log file for writing." << std::endl;
 			}
 
-			// Perform decryption logic here
+			// Gets decryption key
 			d->setKey(e->getKey());
 
 			// Appends file and decrypt the encrypted file
