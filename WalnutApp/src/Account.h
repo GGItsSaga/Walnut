@@ -97,6 +97,14 @@ public:
         inFile.close();
         return false; // Login failed
     }
+
+    // Returns username for log recording: 
+    std::string getUsername() const
+    {
+        return username;
+    }
+
+
 };
 
 #endif // ACCOUNT_H

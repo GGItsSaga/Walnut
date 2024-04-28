@@ -239,6 +239,22 @@ private:
 	{
 		try
 		{
+			// Logs encryption:
+			std::ofstream logFile("public log.txt", std::ios_base::app);
+			if (logFile.is_open())
+			{
+				logFile << "File Encrypted: " << inputFile << std::endl;
+				logFile << "User: " << account.getUsername() << std::endl;
+				logFile << "Time: " << getCurrentDateTime() << std::endl;
+				logFile << std::endl;
+				logFile.close();
+			}
+			else
+			{
+				std::cerr << "Error opening log file for writing." << std::endl;
+			}
+
+			// Appends and encrypts file typed in
 			e->appendFile(inputFile);
 			e->encryptAndSave();
 		}
@@ -253,10 +269,25 @@ private:
 	{
 		try
 		{
+			// Logs decryption:
+			std::ofstream logFile("public log.txt", std::ios_base::app);
+			if (logFile.is_open())
+			{
+				logFile << "File Decrypted: " << inputFile << std::endl;
+				logFile << "User: " << account.getUsername() << std::endl;
+				logFile << "Time: " << getCurrentDateTime() << std::endl;
+				logFile << std::endl;
+				logFile.close();
+			}
+			else
+			{
+				std::cerr << "Error opening log file for writing." << std::endl;
+			}
+
 			// Perform decryption logic here
 			d->setKey(e->getKey());
 
-			// AppendFile and decrypt the encrypted file
+			// Appends file and decrypt the encrypted file
 			d->appendFile(inputFile);
 			d->decryptAndSaveAll(); // Assuming this method decrypts and saves the decrypted content
 		}
@@ -273,6 +304,16 @@ private:
 		std::ifstream file(fileName);
 		return file.good();
 	}
+
+	// Gets the current date and time for public log:
+	std::string getCurrentDateTime()
+	{
+		std::time_t now = std::time(nullptr);
+		char buffer[80];
+		std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
+		return std::string(buffer);
+	}
+
 };
 
 // Main method for application call:
