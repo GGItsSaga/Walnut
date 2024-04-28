@@ -41,9 +41,11 @@ public:
 		// After exiting account creation, users will use that login and password that they just made in order to access the system. If user login is successful...
 		if (!isLoggedIn)
 		{
-			ImGui::Text("Login"); 
-			ImGui::InputText("Username", usernameInput, sizeof(usernameInput));
-			ImGui::InputText("Password", passwordInput, sizeof(passwordInput), ImGuiInputTextFlags_Password);
+			ImGui::Text("Username");
+			ImGui::InputText("##Username", usernameInput, sizeof(usernameInput)); // ##Username hides the field since we have the text for it above the inputs
+			ImGui::Text("Password");
+			ImGui::InputText("##Password",passwordInput, sizeof(passwordInput), ImGuiInputTextFlags_Password); // Same logic for ##Username, but for password instead
+			ImGui::Text("");
 
 			if (ImGui::Button("Log In"))
 			{
@@ -95,7 +97,7 @@ public:
 				}
 				ImGui::EndPopup();
 			}
-
+			//**********************************************************************************************************************************************************************************************
 			// Create Account popup:
 			if (ImGui::Button("Create Account"))
 			{
@@ -155,7 +157,7 @@ public:
 				}
 			}
 		}
-
+		//**********************************************************************************************************************************************************************************************
 		else // User has successfully logged in. Since thats the case, they are now able to encrypt and decrypt files.
 		{
 			// Center allignment calculations for Encrypt and Decrypt buttons. The next three sectons up until the Encrypt and Decrypt button call is general UI formatting.
@@ -181,16 +183,6 @@ public:
 			{
 				ImGui::OpenPopup("Encrypt Files");
 			}
-
-			ImGui::SameLine(); // Move to the same line for the next button
-
-			// Decrypt button
-			if (ImGui::Button("Decrypt", ImVec2(buttonWidth, buttonHeight)))
-			{
-				ImGui::OpenPopup("Decrypt Files");
-			}
-
-			ImGui::PopStyleVar(2);
 
 			// Encrypt popup. When "Encrypt" is pressed, a pop-up will come up, and will prompt user to enter the file they wish to encrypt.
 			// When they put in the file name, it calls the encryptCallBack method.
@@ -227,7 +219,17 @@ public:
 				ImGui::EndPopup();
 			}
 
-			// Encrypt popup. When "Decrypt" is pressed, a pop-up will come up, and will prompt user to enter the file they wish to decrypt.
+			ImGui::SameLine(); // Move to the same line for the next button
+
+			// Decrypt button
+			if (ImGui::Button("Decrypt", ImVec2(buttonWidth, buttonHeight)))
+			{
+				ImGui::OpenPopup("Decrypt Files");
+			}
+
+			ImGui::PopStyleVar(2);
+
+			// Decrypt popup. When "Decrypt" is pressed, a pop-up will come up, and will prompt user to enter the file they wish to decrypt.
 			// When they put in the file name, it calls the decryptCallBack method.
 			// If the file doesn't exist, outputs an error saying that the file does not exist.
 			if (ImGui::BeginPopupModal("Decrypt Files", NULL, ImGuiWindowFlags_AlwaysAutoResize))
@@ -262,7 +264,7 @@ public:
 				ImGui::EndPopup();
 			}
 
-			// Encryption log: 
+			// Public log: 
 			// Center align the "Open Log File" button. Why do this? 
 			// Makes GUI match what we had originally while making the program look cleaner as a result.
 			float logButtonPosX = (windowWidth - buttonWidth) / 2.0f;
