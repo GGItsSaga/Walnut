@@ -8,11 +8,13 @@
 #include "Decrypt.h"
 #include "Account.h"
 
-
+// ExampleLayer written by Danny 4/10/24
 class ExampleLayer : public Walnut::Layer
 {
 private:
 	Account account;
+	bool adminConfirm = false; // Flag to check if admin is logged in
+	bool adminPopup = false; // Default flag for admin popup
 	bool isLoggedIn = false; // Universal check for login
 	bool showCreateAccountPopup = false; // Universal check for Create account popup
 	char usernameInput[128] = "", passwordInput[128] = ""; // Username and password entry
@@ -30,6 +32,7 @@ public:
 	}
 
 	// Render method for GUI
+	// Written by Mutaba and Danny 4/10/24
 	virtual void OnUIRender() override
 	{
 		ImGui::Begin("Menu");
@@ -44,7 +47,7 @@ public:
 			ImGui::Text("Username");
 			ImGui::InputText("##Username", usernameInput, sizeof(usernameInput)); // ##Username hides the field since we have the text for it above the inputs
 			ImGui::Text("Password");
-			ImGui::InputText("##Password",passwordInput, sizeof(passwordInput), ImGuiInputTextFlags_Password); // Same logic for ##Username, but for password instead
+			ImGui::InputText("##Password", passwordInput, sizeof(passwordInput), ImGuiInputTextFlags_Password); // Same logic for ##Username, but for password instead
 			ImGui::Text("");
 
 			if (ImGui::Button("Log In"))
@@ -57,7 +60,19 @@ public:
 				}
 			}
 
+			// Login failed popup:
+			if (ImGui::BeginPopupModal("Login Failed", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::Text("Username or Password incorrect. Please re-enter.");
+				if (ImGui::Button("OK"))
+				{
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
+
 			// Button to open log file on login screen
+			// Written by Danny 4/11/24
 			if (ImGui::Button("Access Public Log"))
 			{
 				std::string logFileName = "public log.txt";
@@ -87,15 +102,22 @@ public:
 				ImGui::EndPopup();
 			}
 
-			// Login failed popup:
-			if (ImGui::BeginPopupModal("Login Failed", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+			// Opens a readme.txt file to help new users
+			// Written by Mutaba 4/12/24
+			if (ImGui::Button("Help"))
 			{
-				ImGui::Text("Username or Password incorrect. Please re-enter.");
-				if (ImGui::Button("OK"))
+				std::string helperFile = "readme.txt";
+				std::ifstream logFile(helperFile);
+				if (logFile.good())
 				{
-					ImGui::CloseCurrentPopup();
+					logFile.close();
+					std::string command = "start notepad " + helperFile;
+					std::system(command.c_str());
 				}
-				ImGui::EndPopup();
+				else
+				{
+					ImGui::OpenPopup("Error reading readme.txt");
+				}
 			}
 			//**********************************************************************************************************************************************************************************************
 			// Create Account popup:
@@ -158,7 +180,7 @@ public:
 			}
 		}
 		//**********************************************************************************************************************************************************************************************
-		else // User has successfully logged in. Since thats the case, they are now able to encrypt and decrypt files.
+		else // User has successfully logged in. Since thats the case, they are now able to encrypt and decrypt files. Written by Danny 4/15/24
 		{
 			// Center allignment calculations for Encrypt and Decrypt buttons. The next three sectons up until the Encrypt and Decrypt button call is general UI formatting.
 			float windowWidth = ImGui::GetWindowWidth();
@@ -177,6 +199,9 @@ public:
 			// Increase button text size:
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(20, 20));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(20, 20));
+
+			// Checks admin status to see if the admin button will pop up or not:
+			adminConfirm = account.getAdminStatus();
 
 			// Encrypt button 
 			if (ImGui::Button("Encrypt", ImVec2(buttonWidth, buttonHeight)))
@@ -302,6 +327,29 @@ public:
 				}
 				ImGui::EndPopup();
 			}
+
+			// If user is an admin, display the admin button.
+			// Written by Danny 4/23/24
+			ImGui::SetCursorPos(ImVec2(10, ImGui::GetWindowSize().y - 40)); // Sets the button to the bottom left corner 
+			if (adminConfirm) // If use is admin, display button. Otherwise, do not.
+			{
+				if (ImGui::Button("Change user admin status"))
+				{
+					std::string accFile = "accounts.txt";
+					std::ifstream logFile(accFile);
+
+					if (logFile.good())
+					{
+						logFile.close();
+						std::string command = "start notepad " + accFile;
+						std::system(command.c_str());
+					}
+					else
+					{
+						ImGui::OpenPopup("Account File not found");
+					}
+				}
+			}
 		}
 		ImGui::End();
 	}
@@ -311,6 +359,7 @@ private:
 	std::unique_ptr<Decrypt> d;
 
 	// Encryption call:
+	// Written by Alex 3/17/24
 	void encryptCallback(const char* inputFile)
 	{
 		try
@@ -340,7 +389,8 @@ private:
 		}
 	}
 
-	// Decryption call: 
+	// Decryption call:
+	// Written by Alex 3/17/24 
 	void decryptCallback(const char* inputFile)
 	{
 		try
@@ -375,6 +425,7 @@ private:
 	}
 
 	// Checks if a file exits or not for encryption or decryption.
+	// Written by Alex 3/17/24
 	bool fileExists(const char* fileName)
 	{
 		std::ifstream file(fileName);
@@ -382,6 +433,7 @@ private:
 	}
 
 	// Gets the current date and time for public log:
+	// Written by Danny 3/30/24
 	std::string getCurrentDateTime()
 	{
 		std::time_t now = std::time(nullptr);
@@ -393,6 +445,7 @@ private:
 };
 
 // Main method for application call:
+// Default Walnut setup from Open source code
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
 	Walnut::ApplicationSpecification spec;

@@ -12,12 +12,15 @@ private:
     std::string username;
     std::string password;
     std::string errorMessage;
+    bool isAdmin;
 
+    // Written by Alex 4/10/24
     bool isValidPassword(const std::string& pwd) const 
     {
         return pwd.length() >= 6; // Simple check for password length
     }
 
+    // Written by Danny 4/10/24
     void saveToFile() const 
     {
         std::ofstream outFile("accounts.txt", std::ios::app); // Append mode
@@ -30,7 +33,7 @@ private:
 
         try 
         {
-            outFile << username << " " << password << std::endl;
+            outFile << username << " " << password << " " << "no" << std::endl;
             outFile.close(); // Close the file after writing
         }
         catch (const std::exception& e) 
@@ -42,7 +45,7 @@ private:
     }
 
 public:
-    Account() : username(""), password("") {}
+    Account() : username(""), password(""), isAdmin(false) {} // Constructor, written by David 4/10/24
 
     std::string createAccount(const std::string& usr, const std::string& pwd)
     {
@@ -54,12 +57,14 @@ public:
 
         username = usr;
         password = pwd;
+        getAdminStatus(); // Returns admin status
 
         saveToFile(); // Save the account data to file
         return "Account created successfully";
     }
     
-    // Checks if the username is taken or not. If it is, output an error and ask them to re-enter.
+    // Checks if the username is taken or not. If it is, output an error and ask them to re-enter. Returns true/false for conditions. 
+    // Written by Danny, David and Alex 4/10/24
     bool isUsernameTaken(const std::string& usr) const
     {
         std::ifstream inFile("accounts.txt");
@@ -78,17 +83,19 @@ public:
         return false; // Username is not taken
     }
 
+    // Checks to see if user is logged in:
+    // Written by Alex, Danny and David 4/10/24
     bool login(const std::string& usr, const std::string& pwd) 
     {
         std::ifstream inFile("accounts.txt");
-        std::string storedUser, storedPass;
+        std::string storedUser, storedPass, adminStatus;
 
-        while (inFile >> storedUser >> storedPass) 
+        while (inFile >> storedUser >> storedPass >> adminStatus)
         {
-            if (storedUser == usr && storedPass == pwd) 
+            if (storedUser == usr && storedPass == pwd)
             {
                 username = usr;
-                password = pwd;
+                isAdmin = (adminStatus == "yes");
                 inFile.close();
                 return true; // Login successful
             }
@@ -96,6 +103,12 @@ public:
 
         inFile.close();
         return false; // Login failed
+    }
+
+    // Returning admin status:
+    bool getAdminStatus() const
+    {
+        return isAdmin;
     }
 
     // Returns username for log recording: 
